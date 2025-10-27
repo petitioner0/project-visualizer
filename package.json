@@ -1,0 +1,12 @@
+{
+"name": "com.petitioner0.project-visualizer",
+"displayName": "Project Structure Visualizer",
+"version": "0.1.0",
+"unity": "6000.0",
+"editorOnly": true,
+"description": "Visualize Unity project structure",
+"author": { "name": "Petitioner0", "email": "petitioner4@gmail.com" },
+"keywords": ["visualize", "roslyn", "yaml", "editor" ],
+"license": "MIT",
+"hideInEditor": false
+}
