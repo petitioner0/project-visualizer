@@ -17,7 +17,21 @@ namespace ProjectStructureVisualizer
         // Track the mapping from component node to its constant node list
         private readonly Dictionary<Node, List<Node>> componentToConstants;
 
-        private float currentLibraryY = 0;
+        // Layout constants
+        private const float X_EXTERNAL = -400f; // X-axis start position for external class nodes (leftmost side)
+        private const float X_SCENE = 0f; // X-axis start position for Scene nodes (centered)
+        private const float Y_START = 0f; // Y-axis start position for all nodes
+        private const float EXTERNAL_Y_GAP = 100f; // Vertical spacing between external class nodes
+
+        private float currentY = Y_START;
+        private float externalY = Y_START;
+        private float currentX = Y_START;
+
+        // Cluster layout parameters
+        private const float GRID_SPACING = 250f; // Horizontal spacing between nodes
+        private const float COMPONENT_OFFSET_Y = 150f; // Distance from Component to GameObject
+        private const float CIRCLE_RADIUS = 120f; // Circle layout radius
+        private const float CONSTANT_OFFSET_Y = 100f; // Distance from Constant to Component
 
         public ProjectGraphBuilder(
             ProjectGraphView graphView,
@@ -52,9 +66,6 @@ namespace ProjectStructureVisualizer
             // Build the external class layer
             BuildExternalClassLayer(data);
 
-            // Record the Y position of the external class nodes, the library nodes will start from here
-            currentLibraryY = nodeById.Count * 150;
-
             // Build the call edge layer (methodName as label)
             BuildCallEdges(data, nodeIdToClassName);
 
@@ -88,29 +99,46 @@ namespace ProjectStructureVisualizer
             Dictionary<string, string> nodeIdToClassName
         )
         {
-            float sceneY = 0;
+            currentX = X_SCENE;
+            currentY = Y_START;
             foreach (var scene in data.scenes)
             {
                 var sceneNode = nodeFactory.CreateSceneNode(scene);
                 RegisterNode(scene.sceneName, sceneNode);
                 graphView.AddElement(sceneNode);
 
-                sceneNode.SetPosition(new Rect(0, sceneY, 250, 100));
+                // Arrange scenes horizontally
+                sceneNode.SetPosition(new Rect(currentX, currentY, 250, 100));
 
-                float goY = sceneY + 50;
-                foreach (var go in scene.gameObjects)
-                {
-                    goY = BuildGameObjectRecursively(go, sceneNode, 350, goY, 0);
-                }
+                // Horizontal cluster layout for GameObjects
+                float maxY = BuildGameObjectsHorizontal(scene, sceneNode, currentX, currentY + 200);
 
-                sceneY = goY + 100;
+                // Move to next Scene position
+                currentX += GRID_SPACING;
+                currentY = Mathf.Max(currentY, maxY);
             }
+        }
+
+        private float BuildGameObjectsHorizontal(
+            ProjectScanner.SceneStructure scene,
+            Node parentNode,
+            float baseX,
+            float baseY
+        )
+        {
+            float maxY = baseY;
+            foreach (var go in scene.gameObjects)
+            {
+                float currentGoY = BuildGameObjectCluster(go, parentNode, baseX, baseY, 0);
+                maxY = Mathf.Max(maxY, currentGoY);
+                baseX += GRID_SPACING * 2; // Each GameObject occupies more horizontal space
+            }
+            return maxY;
         }
 
         private void BuildExternalClassLayer(ProjectScanner.ProjectStructureData data)
         {
-            float externalX = 1050;
-            float externalY = 0;
+            externalY = Y_START;
             foreach (var cls in data.externalClasses)
             {
                 if (
@@ -132,8 +160,8 @@ namespace ProjectStructureVisualizer
                 var node = nodeFactory.CreateExternalClassNode(cls);
                 RegisterNode(clsKey, node);
                 graphView.AddElement(node);
-                node.SetPosition(new Rect(externalX, externalY, 250, 100));
-                externalY += 150;
+                node.SetPosition(new Rect(X_EXTERNAL, externalY, 250, 100));
+                externalY += EXTERNAL_Y_GAP;
             }
         }
 
@@ -188,17 +216,7 @@ namespace ProjectStructureVisualizer
 
                 if (fromNode == null || toNode == null)
                 {
-                    bool isSystemType =
-                        ProjectGraphUtils.IsSystemNamespaceType(fromKey)
-                        || ProjectGraphUtils.IsUnitySystemType(fromKey);
-                    if (!isSystemType && fromNode == null)
-                    {
-                        failedEdges++;
-                    }
-                    if (!isSystemType && toNode == null)
-                    {
-                        failedEdges++;
-                    }
+                    failedEdges++;
                     continue;
                 }
 
@@ -373,8 +391,13 @@ namespace ProjectStructureVisualizer
                 // Check if same edge already exists
                 if (!edgesByPorts.ContainsKey(edgeKey))
                 {
+                    // Determine if this relation type should show a label
+                    string labelText = ShouldShowLabelForRelation(structRel.relationType)
+                        ? structRel.relationType
+                        : null;
+
                     // Create new edge
-                    var edge = new LabeledEdge(structRel.relationType)
+                    var edge = new LabeledEdge(labelText)
                     {
                         output = outputPort,
                         input = inputPort,
@@ -388,18 +411,14 @@ namespace ProjectStructureVisualizer
             }
         }
 
-        private float BuildGameObjectRecursively(
+        private float BuildGameObjectCluster(
             ProjectScanner.GameObjectStructure go,
             Node parentNode,
-            float startX,
-            float startY,
+            float baseX,
+            float baseY,
             int depth
         )
         {
-            // Layout rules: each depth occupies two columns
-            float goX = 350 + depth * 600;
-            float componentX = 650 + depth * 600;
-
             // Create GameObject node
             var goNode = nodeFactory.CreateGameObjectNode(go);
             RegisterNode(go.instanceId, goNode);
@@ -417,81 +436,120 @@ namespace ProjectStructureVisualizer
                 AddEdge(parentNode, goNode, "child_of");
             }
 
-            // GameObject in odd-numbered column
-            goNode.SetPosition(new Rect(goX, startY, 220, 80));
+            // GameObject position at base position
+            goNode.SetPosition(new Rect(baseX, baseY, 250, 80));
 
-            // Process all components
-            float compY = startY;
-            float constantX = componentX + 300;
-            // Component in even-numbered column (next column at this level)
-            foreach (var comp in go.components)
+            float bottomY = baseY + 80; // GameObject bottom edge
+
+            // Process components in cluster layout
+            if (go.components.Count > 0)
             {
-                string compKey = ProjectGraphUtils.NormalizeFullName(comp.className);
+                bottomY = baseY + COMPONENT_OFFSET_Y;
 
-                var compNode = nodeFactory.CreateComponentNode(comp);
+                // Get positions for components in circular arrangement
+                var componentPositions = GetClusterPositions(go.components.Count, baseX, bottomY);
 
-                // Register Component: use both className and instanceId
-                RegisterNode(compKey, compNode);
-                if (!string.IsNullOrEmpty(comp.instanceId))
+                for (int i = 0; i < go.components.Count; i++)
                 {
-                    RegisterNode(comp.instanceId, compNode);
-                }
+                    var comp = go.components[i];
+                    var compPos = componentPositions[i];
+                    bottomY = Mathf.Max(bottomY, compPos.y + 80);
 
-                graphView.AddElement(compNode);
-                AddEdge(goNode, compNode, "has_component");
+                    string compKey = ProjectGraphUtils.NormalizeFullName(comp.className);
 
-                compNode.SetPosition(new Rect(componentX, compY, 250, 80));
+                    var compNode = nodeFactory.CreateComponentNode(comp);
 
-                // Create nodes for component's constants
-                float constantY = compY;
-                int constantCount = 0;
-                List<Node> constNodes = new List<Node>(); // Track all constant nodes of this component
-                foreach (var prop in comp.properties)
-                {
-                    // Filter out values of reference type
-                    string valueStr = prop.Value?.ToString() ?? "null";
-                    if (!valueStr.StartsWith("Ref →") && !string.IsNullOrEmpty(valueStr))
+                    // Register Component: use both className and instanceId
+                    RegisterNode(compKey, compNode);
+                    if (!string.IsNullOrEmpty(comp.instanceId))
                     {
-                        var constNode = nodeFactory.CreateConstantNode(prop.Key, valueStr);
-                        RegisterNode($"{comp.instanceId}.{prop.Key}", constNode);
+                        RegisterNode(comp.instanceId, compNode);
+                    }
 
-                        // Not added to graphView, initial state is hidden (will be added to componentToConstants and displayed only when needed)
+                    graphView.AddElement(compNode);
+                    AddEdge(goNode, compNode, "has_component");
+                    compNode.SetPosition(new Rect(compPos.x, compPos.y, 250, 80));
 
-                        constNode.SetPosition(new Rect(constantX, constantY, 200, 50));
-                        constantY += 60;
-                        constantCount++;
-                        constNodes.Add(constNode);
+                    // Create constant nodes around this component
+                    List<Node> constNodes = new List<Node>();
+                    var constantPositions = GetClusterPositions(
+                        comp.properties.Count(p =>
+                            !p.Value?.ToString().StartsWith("Ref →") ?? false
+                        ),
+                        compPos.x,
+                        compPos.y + CONSTANT_OFFSET_Y
+                    );
+
+                    int constIndex = 0;
+                    foreach (var prop in comp.properties)
+                    {
+                        string valueStr = prop.Value?.ToString() ?? "null";
+                        if (!valueStr.StartsWith("Ref →") && !string.IsNullOrEmpty(valueStr))
+                        {
+                            var constNode = nodeFactory.CreateConstantNode(prop.Key, valueStr);
+                            RegisterNode($"{comp.instanceId}.{prop.Key}", constNode);
+
+                            var constantPos =
+                                constIndex < constantPositions.Count
+                                    ? constantPositions[constIndex]
+                                    : new Vector2(
+                                        compPos.x,
+                                        compPos.y + CONSTANT_OFFSET_Y + constIndex * 60
+                                    );
+
+                            constNode.SetPosition(new Rect(constantPos.x, constantPos.y, 200, 50));
+                            constNodes.Add(constNode);
+                            constIndex++;
+                        }
+                    }
+
+                    if (constNodes.Count > 0)
+                    {
+                        componentToConstants[compNode] = constNodes;
                     }
                 }
-
-                // Record mapping from component to its constant nodes
-                if (constNodes.Count > 0)
-                {
-                    componentToConstants[compNode] = constNodes;
-                }
-
-                // Each component occupies fixed height, regardless of constant nodes (constant nodes are dynamically displayed)
-                compY += 110;
             }
 
-            // Calculate total height occupied by components
-            float componentHeight = Mathf.Max(0, compY - startY);
-
-            // Recursively process all child objects
-            float childStartY = startY;
+            // Process child objects below components
+            float childY = bottomY + 100;
             foreach (var child in go.children)
             {
-                childStartY = BuildGameObjectRecursively(
-                    child,
-                    goNode,
-                    startX,
-                    childStartY + Mathf.Max(componentHeight, 120),
-                    depth + 1
-                );
+                childY = BuildGameObjectCluster(child, goNode, baseX, childY, depth + 1);
             }
 
-            // Return the Y position where the next GameObject should be placed
-            return Mathf.Max(childStartY, compY) + 20;
+            return Mathf.Max(bottomY, childY);
+        }
+
+        private List<Vector2> GetClusterPositions(int count, float centerX, float centerY)
+        {
+            var positions = new List<Vector2>();
+
+            if (count == 0)
+                return positions;
+
+            // Place single node directly in center
+            if (count == 1)
+            {
+                positions.Add(new Vector2(centerX, centerY));
+                return positions;
+            }
+
+            // Calculate circle layout radius, adaptively based on count
+            float radius = CIRCLE_RADIUS;
+            if (count > 3)
+                radius += (count - 3) * 20; // Increase radius when there are more nodes
+
+            // Arrange all nodes in a circle
+            for (int i = 0; i < count; i++)
+            {
+                // Starting from -π/2, arrange uniformly counterclockwise
+                float angle = (float)i / count * 2 * Mathf.PI - Mathf.PI / 2;
+                float x = centerX + Mathf.Cos(angle) * radius;
+                float y = centerY + Mathf.Sin(angle) * radius;
+                positions.Add(new Vector2(x, y));
+            }
+
+            return positions;
         }
 
         private void RegisterNode(string id, Node node)
@@ -522,6 +580,19 @@ namespace ProjectStructureVisualizer
             return ProjectGraphUtils.FindNearestNode(id, nodeById);
         }
 
+        private bool ShouldShowLabelForRelation(string relationType)
+        {
+            // These structure relation types don't need to show labels
+            if (string.IsNullOrEmpty(relationType))
+                return false;
+
+            string lowerRelationType = relationType.ToLower();
+            return !lowerRelationType.Contains("contains")
+                && !lowerRelationType.Contains("child_of")
+                && !lowerRelationType.Contains("has_component")
+                && !lowerRelationType.Contains("has_property");
+        }
+
         private Node GetOrCreateLibraryNode(string libraryName)
         {
             // Get library's short name as key
@@ -537,14 +608,11 @@ namespace ProjectStructureVisualizer
             var node = nodeFactory.CreateLibraryNode(libraryName);
             libraryNodes[shortName] = node;
 
-            // Place library nodes below external class nodes, arranged in order
-            float libraryX = 1050;
-
             graphView.AddElement(node);
-            node.SetPosition(new Rect(libraryX, currentLibraryY, 250, 80));
+            node.SetPosition(new Rect(X_EXTERNAL, externalY, 250, 80));
 
             // Increment Y position to reserve space for next library node
-            currentLibraryY += 110;
+            externalY += EXTERNAL_Y_GAP;
 
             // Register both full name and short name for convenient lookup
             RegisterNode(libraryName, node);

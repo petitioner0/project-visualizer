@@ -228,8 +228,7 @@ namespace ProjectStructureVisualizer
                     foreach (var kvp in prefabCache)
                     {
                         // Remove .prefab extension and path prefix, compare only file name
-                        string prefabFileName =
-                            System.IO.Path.GetFileNameWithoutExtension(kvp.Key);
+                        string prefabFileName = System.IO.Path.GetFileNameWithoutExtension(kvp.Key);
                         string normalizedFieldName = fieldName
                             .Replace("Prefab", "")
                             .Replace("prefab", "");
@@ -392,7 +391,7 @@ namespace ProjectStructureVisualizer
             if (classSymbol == null)
                 return null;
 
-            // 跳过数据模型命名空间
+            // Skip data model namespace
             if (
                 classSymbol
                     .ContainingNamespace?.ToDisplayString()
@@ -463,7 +462,7 @@ namespace ProjectStructureVisualizer
                     // Build namespace + type name format consistent with node creation
                     string usedTypeName = fieldType.Name;
                     string usedTypeNamespace =
-                        fieldType.ContainingNamespace?.ToDisplayString()                         ?? "<global namespace>";
+                        fieldType.ContainingNamespace?.ToDisplayString() ?? "<global namespace>";
                     string usedType = NormalizeFullName($"{usedTypeNamespace}.{usedTypeName}");
 
                     // Check if the same relationship already exists
@@ -562,7 +561,7 @@ namespace ProjectStructureVisualizer
                 return "unity_lifecycle";
 
             // Unity event callbacks
-            if (methodName.StartsWith("On") && methodName.Contains("Trigger")            )
+            if (methodName.StartsWith("On") && methodName.Contains("Trigger"))
                 return "unity_callback";
 
             // Compiler-generated

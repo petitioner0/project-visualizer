@@ -10,8 +10,8 @@ namespace ProjectStructureVisualizer
         {
             public List<SceneStructure> scenes = new();
             public List<ExternalClass> externalClasses = new();
-            public List<CallRelation> calls = new(); 
-            public List<StructureRelation> structureRelations = new(); 
+            public List<CallRelation> calls = new();
+            public List<StructureRelation> structureRelations = new();
             public List<PrefabStructure> prefabs = new();
         }
 
@@ -37,7 +37,7 @@ namespace ProjectStructureVisualizer
         {
             public string componentType;
             public string className;
-            public string instanceId; // Component 的 instanceId
+            public string instanceId; // Component's instanceId
             public List<MethodStructure> methods = new();
             public Dictionary<string, object> properties = new();
         }

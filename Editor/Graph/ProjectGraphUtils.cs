@@ -212,7 +212,5 @@ namespace ProjectStructureVisualizer
             }
             return fullName;
         }
-
     }
 }
-

@@ -248,7 +248,7 @@ namespace ProjectStructureVisualizer
                         node.style.borderRightWidth = 3;
                         node.style.borderTopWidth = 3;
                         node.style.borderBottomWidth = 3;
-                        node.style.borderLeftColor = new Color(1f, 0.84f, 0f); // 金色边框
+                        node.style.borderLeftColor = new Color(1f, 0.84f, 0f); // Gold border
                         node.style.borderRightColor = new Color(1f, 0.84f, 0f);
                         node.style.borderTopColor = new Color(1f, 0.84f, 0f);
                         node.style.borderBottomColor = new Color(1f, 0.84f, 0f);

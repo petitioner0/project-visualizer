@@ -48,10 +48,10 @@ namespace ProjectStructureVisualizer
             toolbar.style.paddingBottom = 3;
             toolbar.style.alignItems = Align.Center;
 
-            var loadButton = new Button(OnLoadYamlClicked) { text = "📂 选择 YAML 文件" };
+            var loadButton = new Button(OnLoadYamlClicked) { text = "📂 choose YAML file" };
             toolbar.Add(loadButton);
 
-            var pathLabel = new Label("未选择文件") { name = "pathLabel" };
+            var pathLabel = new Label("No file selected") { name = "pathLabel" };
             pathLabel.style.marginLeft = 10;
             toolbar.Add(pathLabel);
 

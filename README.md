@@ -16,6 +16,7 @@ A powerful Unity editor tool for analyzing and visualizing Unity project structu
 - **Multi-layer Views**: Clear display of scene layer, class layer, and library layer
 - **Smart Search**: Real-time node filtering
 - **Edge Labeling**: Call relationships and method name labels
+- **Color-Coded Nodes**: Different node types use different colors for easy identification
 
 ### Data Export
 - **YAML Format Export**: Generates structured project structure files
@@ -56,21 +57,55 @@ In the graph view:
 - Hold `Alt` or middle mouse button to drag and move the view
 - Scroll wheel to zoom
 
+## Graph Color Legend
+
+### Node Colors
+
+#### Scene Layer
+- **Scene**: <span style="color:#4782F5;">Blue</span> - Represents Unity scenes  
+- **GameObject**: <span style="color:#61CF78;">Green</span> - Represents game objects  
+- **Component**: <span style="color:#F5B029;">Orange</span> - Represents components attached to GameObjects
+
+#### Code Layer
+- **Interface**: <span style="color:#ED82ED;">Magenta </span> - Represents C# interfaces  
+- **Enum**: <span style="color:#9C66E8;">Purple</span> - Represents enumeration types  
+- **Struct**: <span style="color:#F57878;">Pink</span> - Represents struct types  
+- **Class**: <span style="color:#A6A6A6;">Gray</span> - Represents C# classes
+
+#### External Layer
+- **Library**: <span style="color:#D9D94D;">Yellow</span> - Represents external library references  
+- **Constant**: <span style="color:#99CCE6;">Light Blue</span> - Represents constant values
+
+---
+
+### Edge Colors
+
+The color of connecting edges represents different relationship types:
+
+- **Structural (contains / child_of)**: <span style="color:#59CC6B;">Green</span> - Parent-child object relationships  
+- **Component (has_component)**: <span style="color:#F5B029;">Orange</span> - Connections between GameObjects and components  
+- **Property (has_property)**: <span style="color:#99CCE6;">Light Blue</span> - Property references  
+- **Inheritance (inherits / implements)**: <span style="color:#ED82ED;">Magenta</span> - Inheritance and implementation relationships  
+- **Method Call (uses / method)**: <span style="color:#A6C2F2;">Light Purple-Blue</span> - Method call relationships  
+- **Reference (references / field_reference)**: <span style="color:#D9D94D;">Yellow</span> - Field references  
+- **Other**: <span style="color:#B3B3B3;">Gray</span> - Other relationships
+
 ## Scan Details
 
-### Scene Structure (Scenes)
+### Scene Structure
 Scans scenes for:
 - Scene root nodes
 - GameObject hierarchy (child_of relationships)
 - Component attachments (has_component relationships)
 - MonoBehaviour instances
 
-### Code Structure (External Classes)
+### Code Structure
 Identifies all C# classes:
 - Namespace and class names
 - Complete method signatures
 - Parameter types and return types
 - Fields and properties
+- Outside library
 
 ### Call Relationships (Calls)
 Tracks method calls:
