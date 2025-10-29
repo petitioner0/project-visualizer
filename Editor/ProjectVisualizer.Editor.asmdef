@@ -1,24 +1,26 @@
 {
-"name": "ProjectVisualizer.Editor",
-"rootNamespace": "ProjectStructureVisualizer",
-"references": [],
-"optionalUnityReferences": ["TestAssemblies"],
-"includePlatforms": ["Editor"],
-"excludePlatforms": [],
-"allowUnsafeCode": false,
-"overrideReferences": true,
-"precompiledReferences": [
-
-    "Microsoft.CodeAnalysis.dll",
-    "Microsoft.CodeAnalysis.CSharp.dll",
-    "System.Collections.Immutable.dll",
-    "System.Reflection.Metadata.dll",
-    "System.Runtime.CompilerServices.Unsafe.dll",
-    "System.Memory.dll",
-    "YamlDotNet.dll"
-],
-"autoReferenced": true,
-"defineConstraints": [],
-"versionDefines": [],
-"noEngineReferences": false
+    "name": "ProjectVisualizer.Editor",
+    "rootNamespace": "ProjectStructureVisualizer",
+    "references": [
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Microsoft.CodeAnalysis.dll",
+        "Microsoft.CodeAnalysis.CSharp.dll",
+        "System.Collections.Immutable.dll",
+        "YamlDotNet.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
 }
