@@ -26,9 +26,7 @@ A powerful Unity editor tool for analyzing and visualizing Unity project structu
 
 ### Installation
 
-download this package, then two way to install:
-1. Place this package under the `Assets` directory
-2. Go to Window -> Package Manager -> install package from disk
+download this package, place this package under the `Assets` directory.
 
 ### Usage
 
@@ -173,3 +171,11 @@ These methods are specially processed to identify their structural significance.
 1. **Editor Only**: This package is only for Unity Editor and does not affect runtime performance
 2. **Scan Scope**: Only scans files under the `Assets` directory, excludes `Packages` and `Editor` directories
 3. **Performance**: Large projects may take some time to scan and build graph
+
+## Disclaimer
+
+**This project is fully open source.**
+
+Due to the complexity of Unity's system, there may be some methods and calls in Unity that are not fully covered or may be detected incorrectly. We welcome suggestions and feedback to help improve this tool.
+
+**Currently, this package cannot be used as a UPM package due to unknown reasons. We hope to resolve this issue in the future.**
