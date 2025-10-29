@@ -26,7 +26,8 @@ A powerful Unity editor tool for analyzing and visualizing Unity project structu
 
 ### Installation
 
-download this package, place this package under the `Assets` directory.
+Download this package, place this package under the `Assets` directory.\
+Or Download the version in release packed as `.unitypackage`
 
 ### Usage
 
